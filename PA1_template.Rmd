@@ -1,25 +1,59 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "PA1_template"
+output: html_document
 ---
+```{r setoptions cache=TRUE}```
 
+###CALCULATING NUMBER OF STEPS PER DAY
+```{r}
+activity<-read.csv("activity.csv")
+stepsperday<-aggregate(steps~date,data=activity,FUN = sum)
+hist(stepsperday$steps,xlab="Steps per day",main = "Histogram of total steps taken per day")
+meanstepsperday<-round(mean(stepsperday$steps))
+medianstepsperday<-round(median(stepsperday$steps),2)
+```
 
-## Loading and preprocessing the data
+The mean of total steps taken per day = `r meanstepsperday`
+The median of total steps taken per day = `r medianstepsperday`
 
+###CALCULATING TOTAL NUMBER OF STEPS PER INTERVAL
+```{r}
+stepsperinterval<-aggregate(steps~interval,data=activity,FUN = sum)
+plot(stepsperinterval,type = "l",main = "Average Daily Activity Pattern")
+intervalmaxsteps<-stepsperinterval$interval[which(stepsperinterval$steps==max(stepsperinterval$steps))]
+```
 
+The maximum number of steps is taken in the interval `r intervalmaxsteps`
 
-## What is mean total number of steps taken per day?
+###REPLACING MISSING VALUES AND CREATING NEW ACTIVITY SET
+```{r}
+missing<-!complete.cases(activity) #row indexes of missing values
+numofna<-sum(missing)              #number of missing values
+intervalmeans<-aggregate(steps~interval,data=activity,FUN = mean) #mean value over days for each interval
+newactivity<-activity
+newactivity$steps[missing]<-intervalmeans$steps[match(activity$interval[missing],intervalmeans$interval)] #replace the missing values by mean for that interval
 
+newstepsperday<-aggregate(steps~date,data=newactivity,FUN = sum)
+hist(newstepsperday$steps,xlab="Steps per day",main = "Histogram of total steps taken per day")
+newmeanstepsperday<-round(mean(newstepsperday$steps),2)
+newmedianstepsperday<-round(median(newstepsperday$steps),2)
 
+```
 
-## What is the average daily activity pattern?
+The mean of total steps taken per day = `r newmeanstepsperday`
+The median of total steps taken per day = `r newmedianstepsperday`
 
+Replacing the missing values with means for the interval has very little impact on the mean/median of steps taken per day.
 
+###STEPS PER INTERVAL CATEGORISED BY WEEKDAY AND WEEKEND
+```{r}
+newactivity$Day<-as.factor(weekdays(as.Date(newactivity$date)) %in% c("Saturday","Sunday"))
+levels(newactivity$Day)[levels(newactivity$Day)=="FALSE"]<-"Weekday"
+levels(newactivity$Day)[levels(newactivity$Day)=="TRUE"]<-"Weekend"
 
-## Imputing missing values
+newstepsperinterval<-aggregate(steps~Day+interval,data=newactivity,FUN = sum)
+library(ggplot2)
+g<-ggplot(newstepsperinterval,aes(interval,steps))+geom_line(col="blue")+facet_grid(Day~.)
+print(g)
+```
 
-
-
-## Are there differences in activity patterns between weekdays and weekends?

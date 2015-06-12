@@ -1,26 +1,26 @@
 ---
-title: "PA1_template"
+title: "Peer Assessment 1"
 output: html_document
 ---
-```{r setoptions cache=TRUE}```
 
 ###CALCULATING NUMBER OF STEPS PER DAY
 ```{r}
 activity<-read.csv("activity.csv")
 stepsperday<-aggregate(steps~date,data=activity,FUN = sum)
 hist(stepsperday$steps,xlab="Steps per day",main = "Histogram of total steps taken per day")
-meanstepsperday<-round(mean(stepsperday$steps))
-medianstepsperday<-round(median(stepsperday$steps),2)
+meanstepsperday<-mean(stepsperday$steps)
+medianstepsperday<-median(stepsperday$steps)
 ```
 
 The mean of total steps taken per day = `r meanstepsperday`
+
 The median of total steps taken per day = `r medianstepsperday`
 
-###CALCULATING TOTAL NUMBER OF STEPS PER INTERVAL
+###CALCULATING AVERAGE NUMBER OF STEPS PER INTERVAL
 ```{r}
-stepsperinterval<-aggregate(steps~interval,data=activity,FUN = sum)
-plot(stepsperinterval,type = "l",main = "Average Daily Activity Pattern")
-intervalmaxsteps<-stepsperinterval$interval[which(stepsperinterval$steps==max(stepsperinterval$steps))]
+meanstepsperinterval<-aggregate(steps~interval,data=activity,FUN = mean)
+plot(meanstepsperinterval,type = "l",main = "Average Daily Activity Pattern")
+intervalmaxsteps<-meanstepsperinterval$interval[which(meanstepsperinterval$steps==max(meanstepsperinterval$steps))]
 ```
 
 The maximum number of steps is taken in the interval `r intervalmaxsteps`
@@ -29,30 +29,38 @@ The maximum number of steps is taken in the interval `r intervalmaxsteps`
 ```{r}
 missing<-!complete.cases(activity) #row indexes of missing values
 numofna<-sum(missing)              #number of missing values
-intervalmeans<-aggregate(steps~interval,data=activity,FUN = mean) #mean value over days for each interval
 newactivity<-activity
-newactivity$steps[missing]<-intervalmeans$steps[match(activity$interval[missing],intervalmeans$interval)] #replace the missing values by mean for that interval
+newactivity$steps[missing]<-meanstepsperinterval$steps[match(activity$interval[missing],meanstepsperinterval$interval)] #replace the missing values by mean for that interval
 
 newstepsperday<-aggregate(steps~date,data=newactivity,FUN = sum)
 hist(newstepsperday$steps,xlab="Steps per day",main = "Histogram of total steps taken per day")
-newmeanstepsperday<-round(mean(newstepsperday$steps),2)
-newmedianstepsperday<-round(median(newstepsperday$steps),2)
+newmeanstepsperday<-mean(newstepsperday$steps)
+newmedianstepsperday<-median(newstepsperday$steps)
 
 ```
 
+The total number of missing values = `r numofna`
+
+Replacing missing values with **means for the interval**
+
 The mean of total steps taken per day = `r newmeanstepsperday`
+
 The median of total steps taken per day = `r newmedianstepsperday`
 
-Replacing the missing values with means for the interval has very little impact on the mean/median of steps taken per day.
+On replacing the missing values:
+
+There is no change in the mean.
+
+However the median moves to become equal to the mean.
+
 
 ###STEPS PER INTERVAL CATEGORISED BY WEEKDAY AND WEEKEND
 ```{r}
 newactivity$Day<-as.factor(weekdays(as.Date(newactivity$date)) %in% c("Saturday","Sunday"))
 levels(newactivity$Day)[levels(newactivity$Day)=="FALSE"]<-"Weekday"
 levels(newactivity$Day)[levels(newactivity$Day)=="TRUE"]<-"Weekend"
-
-newstepsperinterval<-aggregate(steps~Day+interval,data=newactivity,FUN = sum)
 library(ggplot2)
+newstepsperinterval<-aggregate(steps~Day+interval,data=newactivity,FUN = mean)
 g<-ggplot(newstepsperinterval,aes(interval,steps))+geom_line(col="blue")+facet_grid(Day~.)
 print(g)
 ```
